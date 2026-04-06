@@ -1,0 +1,115 @@
+<div class="p-6 space-y-5 min-h-full">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-semibold text-white tracking-tight">Alerts</h1>
+      <p class="text-xs text-zinc-600 mt-0.5">{{ unread() }} unacknowledged</p>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="flex items-center gap-1 bg-zinc-950 border border-zinc-900 rounded-lg p-1 w-fit">
+    @for (tab of [
+      { key: 'all',      label: 'All' },
+      { key: 'critical', label: 'Critical' },
+      { key: 'warning',  label: 'Warning'  },
+      { key: 'info',     label: 'Info'     }
+    ]; track tab.key) {
+      <button
+        (click)="activeFilter = $any(tab.key)"
+        class="flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-medium transition-colors"
+        [class.bg-white]="activeFilter === tab.key"
+        [class.text-black]="activeFilter === tab.key"
+        [class.text-zinc-500]="activeFilter !== tab.key"
+        [class.hover:text-white]="activeFilter !== tab.key"
+      >
+        {{ tab.label }}
+        @if (unread($any(tab.key === 'all' ? undefined : tab.key)) > 0 && tab.key !== 'all') {
+          <span class="w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
+            [class.bg-red-500]="tab.key === 'critical'"
+            [class.text-white]="tab.key === 'critical'"
+            [class.bg-amber-500]="tab.key === 'warning'"
+            [class.bg-blue-500]="tab.key === 'info'">
+            {{ unread($any(tab.key)) }}
+          </span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Alert List -->
+  <div class="space-y-2">
+    @for (alert of filtered; track alert.id) {
+    <div
+      class="bg-zinc-950 border border-zinc-900 rounded-xl p-5 transition-all"
+      [ngClass]="rowClass(alert)"
+    >
+      <div class="flex items-start gap-4">
+
+        <!-- Severity icon -->
+        <div class="w-9 h-9 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5" [ngClass]="severityIcon(alert.severity)">
+          @if (alert.severity === 'critical') {
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+          }
+          @if (alert.severity === 'warning') {
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+            </svg>
+          }
+          @if (alert.severity === 'info') {
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+            </svg>
+          }
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p class="text-sm font-semibold text-white leading-tight">{{ alert.type }}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-xs text-zinc-500">{{ alert.patientName }}</span>
+                <span class="text-zinc-800">·</span>
+                <span class="text-xs text-zinc-600 bg-zinc-900 px-1.5 py-0.5 rounded">{{ alert.ward }}</span>
+                <span class="text-zinc-800">·</span>
+                <span class="text-xs text-zinc-600">{{ alert.patientId }}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 flex-shrink-0">
+              <span class="text-[11px] text-zinc-600 tabular-nums">{{ alert.timestamp | date:'HH:mm' }}</span>
+              @if (!alert.acknowledged) {
+                <button
+                  (click)="acknowledge(alert)"
+                  class="text-[11px] font-medium px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
+                >
+                  Acknowledge
+                </button>
+              } @else {
+                <span class="text-[11px] text-zinc-700 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                  </svg>
+                  Acknowledged
+                </span>
+              }
+            </div>
+          </div>
+          <p class="text-xs text-zinc-500 mt-2 leading-relaxed">{{ alert.message }}</p>
+        </div>
+
+      </div>
+    </div>
+    }
+
+    @empty {
+    <div class="bg-zinc-950 border border-zinc-900 rounded-xl p-12 text-center">
+      <p class="text-sm text-zinc-600">No alerts in this category</p>
+    </div>
+    }
+  </div>
+
+</div>
