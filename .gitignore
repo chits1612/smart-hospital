@@ -1,0 +1,46 @@
+# ── Node modules ─────────────────────────────────────────────────────────────
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
+client/dist/
+client/.angular/cache/
+client/out-tsc/
+client/tmp/
+client/bazel-out/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-error.log*
+*.log
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Test coverage ─────────────────────────────────────────────────────────────
+client/coverage/
+testem.log
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+*.sublime-workspace
+.history/
+
+# ── VS Code (keep shared settings, ignore personal) ──────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ── OS files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+.sass-cache/
+/connect.lock
+/typings

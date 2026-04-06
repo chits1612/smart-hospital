@@ -8,10 +8,11 @@ import {
 } from '@angular/core';
 import { AsyncPipe, NgClass, TitleCasePipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, combineLatest, filter } from 'rxjs';
 import { Chart, registerables } from 'chart.js';
 import { HospitalService } from '../../services/hospital.service';
 import { Patient } from '../../models/patient.model';
+import { BedOccupancy, DailyAdmission } from '../../models/patient.model';
 
 Chart.register(...registerables);
 
@@ -38,12 +39,22 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
   constructor() {}
 
   ngAfterViewInit(): void {
-    this.buildOccupancyChart();
-    this.buildAdmissionsChart();
+    // Load chart data via HTTP, then render charts once both arrive
+    this.subs.add(
+      combineLatest([
+        this.svc.getBedOccupancy(),
+        this.svc.getDailyAdmissions(),
+      ]).subscribe(([occupancy, admissions]) => {
+        this.buildOccupancyChart(occupancy);
+        this.buildAdmissionsChart(admissions);
+      }),
+    );
+
     this.buildEcgChart();
 
+    // Wire live ECG ticks from WebSocket
     this.subs.add(
-      this.svc.ecg$.subscribe(data => {
+      this.svc.ecg$.pipe(filter(d => d.length > 0)).subscribe(data => {
         if (this.ecgChart) {
           this.ecgChart.data.datasets[0].data = data;
           this.ecgChart.update('none');
@@ -80,8 +91,8 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private buildOccupancyChart(): void {
-    const data = this.svc.getBedOccupancy();
+  private buildOccupancyChart(data: BedOccupancy[]): void {
+    if (this.occupancyChart) { this.occupancyChart.destroy(); }
     const ctx = this.occupancyCanvas.nativeElement.getContext('2d')!;
     this.occupancyChart = new Chart(ctx, {
       type: 'bar',
@@ -108,8 +119,8 @@ export class DashboardComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private buildAdmissionsChart(): void {
-    const data = this.svc.getDailyAdmissions();
+  private buildAdmissionsChart(data: DailyAdmission[]): void {
+    if (this.admissionsChart) { this.admissionsChart.destroy(); }
     const ctx = this.admissionsCanvas.nativeElement.getContext('2d')!;
     this.admissionsChart = new Chart(ctx, {
       type: 'bar',

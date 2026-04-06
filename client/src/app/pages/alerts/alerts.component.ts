@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NgClass, DatePipe } from '@angular/common';
+import { Subscription } from 'rxjs';
+import { HospitalService } from '../../services/hospital.service';
 
 interface HospitalAlert {
   id: string;
-  timestamp: Date;
+  timestamp: string;
   patientName: string;
   patientId: string;
   ward: string;
@@ -18,19 +20,17 @@ interface HospitalAlert {
   imports: [NgClass, DatePipe],
   templateUrl: './alerts.component.html',
 })
-export class AlertsComponent {
+export class AlertsComponent implements OnInit, OnDestroy {
   activeFilter: 'all' | 'critical' | 'warning' | 'info' = 'all';
+  alerts: HospitalAlert[] = [];
 
-  alerts: HospitalAlert[] = [
-    { id: 'A001', timestamp: new Date('2026-04-06T14:32:00'), patientName: 'James Wilson',     patientId: 'P001', ward: 'ICU',          type: 'High Heart Rate',         message: 'Heart rate exceeded threshold — current: 102 bpm (limit: 100)',   severity: 'critical', acknowledged: false },
-    { id: 'A002', timestamp: new Date('2026-04-06T14:28:00'), patientName: 'Robert Chen',      patientId: 'P003', ward: 'ICU',          type: 'Low SpO2',                message: 'Blood oxygen critically low — current: 91% (limit: 92%)',          severity: 'critical', acknowledged: false },
-    { id: 'A003', timestamp: new Date('2026-04-06T14:15:00'), patientName: 'Michael Thompson', patientId: 'P005', ward: 'Orthopedics',  type: 'Elevated Temperature',    message: 'Temperature above normal — current: 37.5°C (limit: 37.5°C)',      severity: 'warning',  acknowledged: false },
-    { id: 'A004', timestamp: new Date('2026-04-06T14:10:00'), patientName: 'Linda Park',       patientId: 'P006', ward: 'ICU',          type: 'High Blood Pressure',     message: 'Systolic BP elevated — current: 140 mmHg (threshold: 135)',       severity: 'warning',  acknowledged: true  },
-    { id: 'A005', timestamp: new Date('2026-04-06T13:55:00'), patientName: 'James Wilson',     patientId: 'P001', ward: 'ICU',          type: 'Medication Overdue',      message: 'Scheduled medication overdue by 15 minutes',                       severity: 'info',     acknowledged: true  },
-    { id: 'A006', timestamp: new Date('2026-04-06T13:40:00'), patientName: 'Sarah Mitchell',   patientId: 'P002', ward: 'Cardiology',   type: 'Lab Results Ready',       message: 'New cardiac panel results available for review',                   severity: 'info',     acknowledged: true  },
-    { id: 'A007', timestamp: new Date('2026-04-06T13:20:00'), patientName: 'Robert Chen',      patientId: 'P003', ward: 'ICU',          type: 'Critical Deterioration',  message: 'Rapid deterioration of respiratory function detected',             severity: 'critical', acknowledged: true  },
-    { id: 'A008', timestamp: new Date('2026-04-06T12:57:00'), patientName: 'Patricia Santos',  patientId: 'P010', ward: 'General',      type: 'Fall Risk Alert',         message: 'Patient attempted to leave bed unassisted',                        severity: 'warning',  acknowledged: true  },
-  ];
+  private sub!: Subscription;
+
+  constructor(private svc: HospitalService) {}
+
+  ngOnInit(): void {
+    this.sub = this.svc.alerts$.subscribe(a => (this.alerts = a as HospitalAlert[]));
+  }
 
   get filtered(): HospitalAlert[] {
     return this.activeFilter === 'all'
@@ -43,7 +43,9 @@ export class AlertsComponent {
   }
 
   acknowledge(alert: HospitalAlert): void {
-    alert.acknowledged = true;
+    this.svc.acknowledgeAlert(alert.id).subscribe(() => {
+      alert.acknowledged = true;
+    });
   }
 
   severityIcon(severity: string): string {
@@ -61,4 +63,6 @@ export class AlertsComponent {
     if (a.severity === 'warning')  return 'bg-amber-950/5';
     return '';
   }
+
+  ngOnDestroy(): void { this.sub?.unsubscribe(); }
 }
